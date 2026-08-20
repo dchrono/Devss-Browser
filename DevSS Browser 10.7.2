@@ -1,0 +1,168 @@
+# DevSS Browser 10.7.2
+
+## Technical Overview of the Stable Build
+
+**Release:** DevSS Browser 10.7.2, build 58  
+**Package:** `com.devss.browser`  
+**Target platform:** Android WebView-based browser  
+**Status:** Stable milestone release
+
+> DevSS Browser is a privacy-conscious Android browser built around the platform WebView engine, with a custom browser shell, configurable privacy and page controls, multiple tabs, private browsing, integrated content filtering, reader tools, downloads, file uploads, and selectable address-bar search providers.
+
+This document describes the stable **10.7.2** implementation. It intentionally separates features present in the stable release from later Privacy Center experiments that were ultimately abandoned because they introduced startup instability.
+
+## 1. Design Philosophy
+
+DevSS is designed as a focused browser rather than a general-purpose Android shell. The application keeps the standard WebView rendering engine but surrounds it with a custom interface: an address bar, browser controls, tab management, settings panels, page actions, a start page, bookmarks, reader tools, and private browsing.
+
+The project favors explicit controls and reversible settings. Search-engine selection uses a visible Set/Cancel workflow. Permission and privacy-related preferences are presented as browser settings rather than hidden defaults. The stable release also retains a deliberate conservative boundary: features that could not be made reliable, such as the later granular cookie-removal experiment, are not part of the 10.7.2 release.
+
+## 2. Application Architecture
+
+The source is an Apktool-decoded Android application written primarily as Smali. Smali is the assembly-like representation of Android DEX bytecode; it gives the project direct control over the compiled application while requiring careful register allocation and verifier-safe method structure.
+
+The main browser activity is `MainActivity`. It coordinates the browser shell, WebView instances, tabs, navigation, settings dialogs, bookmarks, downloads, reader mode, content filtering, fullscreen video, and the start page. Supporting classes separate several responsibilities without replacing the central activity model.
+
+| Component | Responsibility |
+|---|---|
+| `MainActivity` | Main browser window, toolbar, address bar, tab strip, menus, navigation, downloads, reader mode, bookmarks, search, fullscreen, and browser state |
+| `PrivateActivity` | Private-browsing process and private session behavior |
+| `PrivacyWebSettingsActivity` | Web privacy and site-behavior settings |
+| `PageSettingsActivity` | Per-page rendering and site settings |
+| `StartPageSettingsActivity` | Start-page feed, header, search, speed-dial, and related configuration |
+| `VisualSkin` and `DevssChromeSkin` | Shared visual styling for controls, cards, dialogs, and browser chrome |
+| `BrowserTab` | Per-tab state and WebView-related tab data |
+| `BrowserWebView` | Customized WebView behavior |
+| `ModernWebViewClient` and `BaseWebViewClient` | Navigation, page lifecycle, filtering, and WebView event handling |
+| `Bookmark`, `Visit`, and `ReaderArticle` | Bookmark, history/visit, and reader-mode data models |
+| `BlockList` and `CosmeticRule` | Network/content blocking data and cosmetic filtering rules |
+| `PrefKeys` | Centralized preference-key definitions |
+
+The Android manifest declares the application package, WebView Safe Browsing metadata, the browser activities, private process behavior, and permissions needed for networking, media, camera, microphone, location, and legacy external storage operations. The target SDK remains unchanged at the stable project target.
+
+## 3. Browser Interface
+
+The main interface contains the address bar, navigation controls, home access, tab controls, a menu button, and page actions. The browser shell supports light and dark presentation and uses shared visual styling for cards and controls. The stable release also includes the monochrome/day-night-compatible DevSS visual identity used throughout the launcher and browser surfaces.
+
+The address bar performs both direct navigation and search. When the entered text is not recognized as a complete HTTP or HTTPS address, DevSS constructs a search request using the selected provider. The browser also supports find-in-page through the address/search context area. A committed find query highlights matching text, while cancellation, dismissal, navigation, reload, and related page transitions clear stale find state according to the stable find behavior.
+
+## 4. Search Engine Selection
+
+Build 58 contains a selectable default search engine. The picker uses the established rounded-card browser menu style and an explicit Set/Cancel workflow.
+
+The stable provider set is intentionally limited to three engines:
+
+| Provider | Stable status |
+|---|---|
+| Brave Search | Available |
+| DuckDuckGo | Available |
+| Google | Available |
+| Startpage | Removed from the picker because of persistent verification/loop behavior |
+
+The provider mapping in build 58 is Brave Search = 0, DuckDuckGo = 1, and Google = 2. A previously stored Startpage preference is resolved to the safe Google fallback. The feature applies to address-bar search behavior and is preserved for private-mode testing within the browser’s separate private session model.
+
+## 5. Tabs and Navigation
+
+DevSS supports multiple tabs, tab switching, tab closing, new-tab behavior, back and forward navigation, reload, home navigation, and restoration of tab-specific address-bar state. The browser maintains per-tab WebView and navigation information rather than treating the entire application as a single page.
+
+The application includes logic for refreshing tab strips and restoring visible tab state after tab changes. Because Android WebView content may be dynamically rendered, the stable code includes lifecycle and redraw handling around navigation, page completion, tab switching, and WebView visibility.
+
+## 6. Private Browsing
+
+Private browsing is implemented through a dedicated `PrivateActivity` and a private process declared in the manifest. This separates private-session behavior from the normal browser process and provides a distinct private browsing surface.
+
+Private mode should be understood as a browser-session privacy feature, not as a guarantee that the network, websites, the operating system, or external services cannot observe activity. Private mode primarily limits the persistence and reuse of local browser session data within the application’s own behavior.
+
+## 7. Privacy and Web Settings
+
+The stable release includes a dedicated privacy/web-settings activity and site/page settings. These areas expose browser behavior such as JavaScript, media behavior, protected media/DRM handling, permissions, cookies, storage, popups, and related WebView controls where supported by the Android WebView API.
+
+The WebView manifest metadata enables Safe Browsing and opts out of WebView metrics collection through the declared `android.webkit.WebView.MetricsOptOut` metadata. These settings do not replace the Android operating system’s own permission model; camera, microphone, location, storage, and media access remain subject to Android and WebView permission flows.
+
+The later experimental Privacy Center attempted to consolidate history and cookie/site-data inspection and to provide individual cookie deletion. It was not adopted into the stable release. Standard Android WebView provides reliable global cookie removal but does not provide a general public delete-cookie-by-name/domain/path API; therefore, the experimental individual-clear behavior was inherently best-effort and was removed from the stable direction.
+
+## 8. Content Blocking
+
+DevSS includes block-list management and cosmetic rules. The source contains `BlockList` and `CosmeticRule` models, parsing and persistence routines, block-list import handling, rule matching, host applicability checks, pause/remove actions, and block-list detail editing.
+
+The browser can therefore maintain filtering data locally and apply rules to matching sites. Block-list behavior depends on the syntax and quality of the imported list, the page’s architecture, WebView limitations, and whether a site’s content is loaded through mechanisms that the browser can observe and filter.
+
+## 9. Reader Mode
+
+Reader mode extracts article-like content and presents it through a simplified reading surface. The source contains reader extraction, paragraph handling, article models, reader source labels, reader URL detection, and entry/exit behavior.
+
+Reader mode is intended to reduce page clutter and improve reading, not to reproduce every interactive element of the original site. Complex layouts, dynamically generated articles, paywalls, scripts, embedded media, and unusual page structures may limit extraction quality.
+
+## 10. Bookmarks and History
+
+The stable browser includes bookmarks, bookmark folders, bookmark creation and editing, bookmark deletion, bookmark movement, bookmark persistence, and validation of bookmark addresses. Bookmark data is stored locally by the application.
+
+The browser also records visit/history information used by its history and navigation features. The stable source includes visit models and history persistence routines. The later plan to move history into a broader Privacy Center was not retained as a stable 10.7.2 feature.
+
+## 11. Downloads and File Uploads
+
+DevSS supports downloads through Android/WebView download handling, MIME-type inspection, safe filename logic, tracked system downloads, generated downloads, and blob-related download support. The stable 10.7.2 direction uses the platform’s automatic download naming behavior rather than a custom naming prompt; this avoids repeated generic names caused by the earlier custom naming flow and delegates naming to Android/WebView where possible.
+
+File upload remains supported through WebView’s file chooser flow. The manifest and browser code retain the permissions and callbacks needed for common HTTPS file-upload scenarios. Upload behavior remains subject to the website’s accepted MIME types, Android permissions, and the WebView file-picker contract.
+
+## 12. Media, Fullscreen, and Protected Content
+
+The browser supports HTML media and WebView fullscreen callbacks. Fullscreen handling is a particularly important stability area in DevSS. The stable release preserves the callback and window-flag pattern used to restore the browser chrome, Android status bar, navigation controls, address bar, and WebView after fullscreen video exits.
+
+Protected media and DRM-related behavior is exposed through page/privacy settings where supported by the WebView and Android device. Whether a particular website uses DRM, ordinary HTML5 video, a proprietary player, or a changing delivery mechanism can affect the observed result. A site’s media behavior should therefore not be treated as a universal proof that DRM is enabled or disabled.
+
+## 13. Start Page
+
+The start page is a configurable browser surface with DevSS branding and optional feed, header, search, speed-dial, and article elements. The source contains start-page settings for feed selection, custom or default feed requests, header visibility, search visibility, speed-dial visibility, collapsed states, article extraction, and local start-page rendering.
+
+The start page is separate from the address-bar search-engine picker. Removing Startpage from the search-engine picker did not remove the unrelated DevSS Start Page settings feature.
+
+## 14. Settings and Page Actions
+
+DevSS separates broad browser settings from page-specific controls. The main settings area contains browser-wide actions such as default search engine, Privacy/Web settings, Start Page settings, bookmarks, downloads, appearance, and other browser preferences. Page Settings controls behavior for the current site or current page, including rendering and compatibility options.
+
+The browser also provides page actions such as reader mode, find-in-page, bookmarks, sharing, reload, navigation, and related tools. The exact options available can vary with the current page, URL type, tab state, and WebView capabilities.
+
+| Settings area | Scope |
+|---|---|
+| Browser Settings | Application-wide preferences and tools |
+| Privacy/Web Settings | WebView privacy, permissions, media, scripts, storage, and site behavior |
+| Page Settings | Current-site/current-page rendering and compatibility choices |
+| Start Page Settings | Start-page feed and layout behavior |
+| Bookmarks | Saved pages, folders, editing, movement, and deletion |
+| Block Lists | Filtering lists, cosmetic rules, pause/remove, import, and details |
+| Private Browsing | Separate private session and process behavior |
+
+## 15. Security and Data Boundaries
+
+The stable manifest requests network access and several media/device permissions because a modern browser must support websites that use networking, camera capture, microphones, location, uploads, and downloads. Requesting a permission does not mean a website automatically receives it; Android and WebView permission flows remain involved.
+
+Safe Browsing is enabled through WebView metadata, while metrics opt-out metadata is declared. These measures are useful privacy and safety controls, but they do not transform WebView into an independent browser engine or guarantee protection against every website, script, tracker, download, or malicious page.
+
+DevSS stores browser state locally through Android application storage and browser/WebView mechanisms. The stable implementation does not provide a user-visible export/import system for the experimental Privacy Center. The source repository contains the application source and documentation, not the signing keystore.
+
+## 16. Known Limitations
+
+DevSS is a WebView-based browser. Its rendering, media, storage, cookie, permission, DRM, Safe Browsing, and fullscreen behavior are constrained by the Android System WebView version and the device manufacturer’s Android implementation. Website changes can also alter behavior without any change to DevSS itself.
+
+Individual cookie deletion is not presented as a stable feature because the standard WebView API does not expose a complete public cookie deletion primitive by cookie identity and all matching attributes. Granular data inspection and clearing therefore require careful platform-specific design and device testing.
+
+Reader extraction may not work perfectly on every page. Content blocking may not catch every tracker or script. Private browsing limits local session persistence but does not make network activity anonymous. Download and upload behavior depends on Android, WebView, website headers, MIME types, and user permissions. Fullscreen behavior is stable in the milestone build but remains sensitive to device window-inset and system-bar implementations.
+
+## 17. Stable Release Baseline
+
+The recommended baseline is **DevSS 10.7.2, build 58**. It is the version preserved in the private GitHub repository and should remain unchanged unless a future development effort begins from a new branch with a clear rollback plan, device-level testing, and a captured crash trace for any regression.
+
+The stable release should be treated as a completed milestone rather than an unfinished prototype. Its strongest features are the polished WebView browser shell, selectable search engines, private browsing, content filtering, reader mode, bookmarks, tabs, uploads, downloads, page settings, and the fullscreen behavior that was specifically tested and stabilized.
+
+## References
+
+[1]: `README.md` — DevSS 10.7.2 source README and stable-release testing guidance.
+[2]: `AndroidManifest.xml` — package identity, activities, permissions, Safe Browsing, metrics opt-out, and private-process declarations.
+[3]: `devss-10.7.2-build58-audit.md` — build-58 search-engine selection audit and provider mapping.
+[4]: `DEVSS_10.6.4_FIND_HIGHLIGHT_AUDIT.md` — stable Find-in-page lifecycle and highlight behavior audit.
+[5]: `MainActivity.smali` — browser shell, settings, tabs, navigation, downloads, reader mode, filtering, fullscreen, and search implementation.
+[6]: `PrivacyWebSettingsActivity.smali` — privacy and WebView settings implementation.
+[7]: `PageSettingsActivity.smali` — page-specific settings implementation.
+[8]: `StartPageSettingsActivity.smali` — start-page configuration implementation.
+[9]: `PrivateActivity.smali` — private browsing activity implementation.
