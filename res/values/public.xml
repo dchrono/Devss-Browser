@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <public type="drawable" name="ic_bee_monochrome" id="0x7f020001" />
+    <public type="drawable" name="transparent_startup_icon" id="0x7f020002" />
+    <public type="drawable" name="ic_bee_foreground" id="0x7f020000" />
+    <public type="mipmap" name="ic_launcher" id="0x7f030000" />
+    <public type="mipmap" name="ic_launcher_round" id="0x7f030001" />
+    <public type="xml" name="network_security_config" id="0x7f040000" />
+    <public type="color" name="bee_icon_background" id="0x7f050000" />
+    <public type="color" name="devss_chrome_surface" id="0x7f050001" />
+    <public type="color" name="devss_chrome_stroke" id="0x7f050002" />
+    <public type="color" name="devss_chrome_glyph" id="0x7f050003" />
+    <public type="color" name="devss_settings_toggle_track" id="0x7f050004" />
+    <public type="color" name="devss_settings_toggle_thumb" id="0x7f050005" />
+    <public type="color" name="devss_skin_surface" id="0x7f050007" />
+    <public type="color" name="devss_skin_control_surface" id="0x7f050008" />
+    <public type="color" name="devss_skin_stroke" id="0x7f050009" />
+    <public type="color" name="devss_skin_control_stroke" id="0x7f05000a" />
+    <public type="color" name="devss_skin_toggle_track" id="0x7f05000b" />
+    <public type="color" name="devss_skin_toggle_thumb" id="0x7f05000c" />
+    <public type="color" name="devss_system_bar_dark" id="0x7f050006" />
+    <public type="style" name="DevssWindowTheme" id="0x7f060000" />
+</resources>

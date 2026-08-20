@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="DevssWindowTheme" parent="@android:style/Theme.DeviceDefault.DayNight">
+        <item name="android:statusBarColor">@color/devss_system_bar_dark</item>
+        <item name="android:navigationBarColor">@color/devss_system_bar_dark</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+    </style>
+</resources>

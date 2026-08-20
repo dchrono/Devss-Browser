@@ -1,0 +1,23 @@
+# Apktool and local build output
+build/
+out/
+*.apk
+*.apks
+*.aab
+*.aligned.apk
+*.unsigned.apk
+*.signed.apk
+
+# Local tooling and private signing material
+*.keystore
+*.jks
+*.pem
+*.pk8
+*.x509.pem
+local.properties
+.gradle/
+.idea/
+
+# Temporary audit/decode output
+.tmp/
+/tmp/

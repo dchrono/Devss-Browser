@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="bee_icon_background">#ff7f7f7f</color>
+    <color name="devss_chrome_surface">#fff4f4f4</color>
+    <color name="devss_chrome_stroke">#ffd8d8d8</color>
+    <color name="devss_chrome_glyph">#ff333333</color>
+    <color name="devss_settings_toggle_track">#ffd8d8d8</color>
+    <color name="devss_settings_toggle_thumb">#ff333333</color>
+    <color name="devss_skin_surface">@android:color/background_light</color>
+    <color name="devss_skin_control_surface">@color/devss_skin_surface</color>
+    <color name="devss_skin_stroke">#ffd0d0d0</color>
+    <color name="devss_skin_control_stroke">@color/devss_skin_stroke</color>
+    <color name="devss_skin_toggle_track">#ffd0d0d0</color>
+    <color name="devss_skin_toggle_thumb">#ff707070</color>
+</resources>
